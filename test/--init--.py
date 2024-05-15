@@ -1,10 +1,9 @@
 import pytest
 from flask import Flask, session
-from flask.testing import FlaskClient
 from app import app  # Assuming your Flask app is in a file named app.py
 
 @pytest.fixture
-def client() -> FlaskClient:
+def client():
     app.config['TESTING'] = True
     app.config['SECRET_KEY'] = 'test_secret'
     with app.test_client() as client:
@@ -20,6 +19,12 @@ def test_index_post(client):
     response = client.post('/', data={'user_input': 'test_input'}, follow_redirects=True)
     assert response.status_code == 200
     assert b'test_input' in response.data
+
+def test_no_code_input(client):
+    code_input = "<script>alert('test');</script>"
+    response = client.post('/', data={'user_input': code_input}, follow_redirects=True)
+    assert response.status_code == 200
+    assert b'<script>' not in response.data
 
 def test_submitted_form(client):
     with client.session_transaction() as sess:
